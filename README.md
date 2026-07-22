@@ -1,11 +1,9 @@
 
 
 ##### MS2Bac by Miriam Abele #####
-
- 1. Requirements:
-    - Install python with anaconda
+```
     - Create a conda environment, e.g. conda env create -f linux_conda.yml
-
+```
 
 
  2. Open command line (or Anaconda prompt), load MS2Bac (name of conda environment), and set working_directory to your favorite folder, e.g. C:/Users/MS2Bac_user/Desktop/MS2Bac/
