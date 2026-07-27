@@ -95,15 +95,20 @@ if __name__ == "__main__":
     psm_file = sys.argv[1]
     idb_file = sys.argv[2]
     bacci_finder_file = sys.argv[3]
+    print('reading PSM file')
     psms = pd.read_csv(psm_file)
 
+    print('reading bacci_finder filer')
     with gzip.open(bacci_finder_file, "rb") as f: bacci_finder = pickle.load(f)
+
+    print('reading database picle file')
     with gzip.open(idb_file, "rb") as f: idb = pickle.load(f)
 
-    # Prepare psms file
+    print('Runing final calculation')
     d = defaultdict(list)
     psms = psms.groupby(['Experiment', 'Sequence'], as_index=False)['Score'].max()
     for tup in psms.itertuples():  d[tup.Experiment].append((tup.Sequence, tup.Score))
     sample_seqs = pd.Series(dict(d))
     res = summary_output(sample_seqs.apply(count_seqs, database=idb, bacci_finder=bacci_finder), bacci_finder=bacci_finder)
     res.to_csv('summary_output.csv', index=False)
+    print('Done')
