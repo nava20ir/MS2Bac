@@ -41,11 +41,13 @@ copy the scripts fragger_run.sh,make_parameter_file.py and chunk_fasta_file.py t
 python chunk_fasta_file all_fasta.fasta 10  # this will make 10 fasta files
 rm all_fasta.fasta                          # remove the big fasta from the search space
 ```
+
 6. Copy the raw file to search_space and run
 ```
-./script.sh BBM_428_P110_31_MIA_007_30.raw # replce your fasta file, this will run the searches using Fragpipe 24 and makes the PSM files per chunk
+./script.sh BBM_428_P110_31_MIA_007_30.raw # replce your rawFile 
 
 ```
+
 7. To combine all the fasta files
 ```
 python combine_fragger_results.py <path_to_psm_files> <name_of_experiment>
