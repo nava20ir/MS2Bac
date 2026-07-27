@@ -44,7 +44,7 @@ rm all_fasta.fasta                          # remove the big fasta from the sear
 
 6. Copy the raw file to search_space and run
 ```
-./script.sh BBM_428_P110_31_MIA_007_30.raw # replce your rawFile 
+./script.sh <raw_file> 
 
 ```
 
