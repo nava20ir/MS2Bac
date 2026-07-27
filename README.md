@@ -17,8 +17,9 @@ conda activate MS2Bac
   - Download: https://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt and store in yourdirectory/00_metafiles
   - Download: https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/ANI_report_prokaryotes.txt and store in yourdirectory/00_metafiles
   - Navigate in Anaconda prompt to your favorite folder\scripts\
-  - Start script: python download_database_MS2Bac.py
-
+```
+python download_database_MS2Bac.py
+```
     Enter your favorite directory when prompted, e.g. C:/Users/MS2Bac_user/Desktop/MS2Bac/. Do not use ' or "
 
 
