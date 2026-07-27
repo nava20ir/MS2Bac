@@ -2,9 +2,8 @@
 
 ##### MS2Bac by Miriam Abele, refactored by Amirhossein Sakhteman 27 July 2026 #####
 1. you need to create the environment The environment is only used for the first step of downloading fasta files 
-```
-  - Create a conda environment, e.g. conda env create -f linux_conda.yml
-```
+- Create a conda environment, e.g. conda env create -f linux_conda.yml
+
 
 
 2. activate the environment by:
