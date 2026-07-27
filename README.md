@@ -29,7 +29,7 @@ python mapping_file_generator.py  # this will make two picke files "idb.pkl.gz" 
 ```
 
 
-5. by default 4 fasta files are generated in `004_fasta` and normally cause the search to fail, in this case in this folder
+5. by default 4 fasta files are generated in `04_fasta` and normally cause the search to fail, in this case in this folder
 ```
 mkdir search_space
 cat *.fasta > /search_space/all_fasta.fasta
