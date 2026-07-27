@@ -1,6 +1,6 @@
 
 
-##### MS2Bac by Miriam Abele #####
+##### MS2Bac by Miriam Abele, refactored by Amirhossein Sakhteman 27 July 2026 #####
 1. you need to create the environment The environment is only used for the first step of downloading fasta files 
 ```
   - Create a conda environment, e.g. conda env create -f linux_conda.yml
@@ -56,7 +56,7 @@ python combine_fragger_results.py <path_to_psm_files> <name_of_experiment>
 
 8. Identification
 ```
-conda deactivate # you need newer version of python to reada the zippped picke files
+conda deactivate # you need newer version of python to read the zippped picke files
 python identification.py <path_to_psm_file from step 7> <path_to_idb_file_from_step 4> <path_to_baccifinder_from_step 4>
 ```
 
