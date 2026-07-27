@@ -93,11 +93,11 @@ if __name__ == "__main__":
 
     import sys
     psm_file = sys.argv[1]
-    idb_file = sys.arv[2]
+    idb_file = sys.argv[2]
     bacci_finder_file = sys.argv[3]
     psms = pd.read_csv(psm_file)
 
-    with gzip.open(bacci_finder_f, "rb") as f: bacci_finder = pickle.load(f)
+    with gzip.open(bacci_finder_file, "rb") as f: bacci_finder = pickle.load(f)
     with gzip.open(idb_file, "rb") as f: idb = pickle.load(f)
 
     # Prepare psms file
