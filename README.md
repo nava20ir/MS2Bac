@@ -24,7 +24,7 @@ conda activate MS2Bac
 
 4. Making the mapping database for the peptides and organism
 ```
-python mapping_file_generator.py  # this will make two picke files
+python mapping_file_generator.py  # this will make two picke files "idb.pkl.gz" and  "bacci_finder.pkl.gz"   
 
 ```
 
@@ -54,7 +54,7 @@ python combine_fragger_results.py <path_to_psm_files> <name_of_experiment>
 8. Identification
 ```
 conda deactivate # you need newer version of python to reada the zippped picke files
-
+python identification.py <path_to_psm_file from step 7> <path_to_idb_file_from_step 4> <path_to_baccifinder_from_step 4>
 ```
 
 
