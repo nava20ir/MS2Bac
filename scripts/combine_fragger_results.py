@@ -1,5 +1,3 @@
-
-
 from collections import defaultdict
 import os
 import numpy as np
@@ -92,7 +90,11 @@ def combine_msfragger_psms(path_input, experiment_name):
 
     '''
     total = combine_tsv_files(path_input, pattern="*.tsv")
-    total = total.groupby('scannum', as_index=False).agg(get_best_hit)
+    #total = total.groupby('scannum', as_index=False).agg(get_best_hit)
+    total = (
+    total.sort_values('hyperscore', ascending=False)
+         .drop_duplicates('scannum')
+    )
     total['Experiment'] = experiment_name
     total = clean_msfragger_df(total)
     print('Processing is done.')
