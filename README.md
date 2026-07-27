@@ -38,6 +38,7 @@ cat *.fasta > /search_space/all_fasta.fasta
 copy the scripts fragger_run.sh,make_parameter_file.py and chunk_fasta_file.py to search_space folder
 
 ```
+cd search_space
 python chunk_fasta_file all_fasta.fasta 10  # this will make 10 fasta files
 rm all_fasta.fasta                          # remove the big fasta from the search space
 ```
