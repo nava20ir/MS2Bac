@@ -1,0 +1,1 @@
+digested fasta files and mapping meta data
