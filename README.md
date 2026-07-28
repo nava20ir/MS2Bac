@@ -27,7 +27,12 @@ python download_database_MS2Bac.py
 python mapping_file_generator.py  # this will make two picke files "idb.pkl.gz" and  "bacci_finder.pkl.gz"   
 
 ```
+- in case you need to add a new organism to the current database do as bellow
 
+```
+python add_new_organism_peptides.py --fasta uniprotkb_proteome_UP000005640_canonical_SwissProt_homo_sapiens_2026_01_09_20417prot.fasta --taxon-id 99999 --genus-tax-id 9606 --organism-name "Homo Sapiens"  --idb idb.pkl.gz  --bacci-finder bacci_finder.pkl.gz --output-fasta peptides_human_fasta.fasta
+
+```
 
 5. by default 4 fasta files are generated in `04_fasta` and normally cause the search to fail, in this case in this folder
 ```
@@ -48,6 +53,7 @@ rm all_fasta.fasta                          # remove the big fasta from the sear
 ./script.sh <raw_file> 
 
 ```
+in the search space above the fasta files and raw file should be exisiting, in case you added a new organism accordin to step 4 please add the digested_fasta file also here
 
 7. To combine all the fasta files
 ```
