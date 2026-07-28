@@ -129,22 +129,32 @@ def main():
 
     args = parser.parse_args()
 
-    print("Loading bacci_finder...")
-
-    with gzip.open(args.bacci_finder, "rb") as f:
-        bacci_finder = pickle.load(f)
-
-    print("Loading idb...")
-
-    with gzip.open(args.idb, "rb") as f:
-        idb = pickle.load(f)
-
     print("Digesting FASTA...")
 
     peptides = digest_fasta(
         args.fasta,
         output_fasta=args.output_fasta,
     )
+
+    print("Loading bacci_finder...")
+
+    with gzip.open(args.bacci_finder, "rb") as f:
+        bacci_finder = pickle.load(f)
+
+    if args.taxon_id in bacci_finder:
+        organism_name = bacci_finder[args.taxon_id][0]
+
+        raise SystemExit(
+            f"ERROR: taxon_id {args.taxon_id} already exists "
+            f"({organism_name}). Aborting."
+        )
+
+    print("Loading idb...")
+
+    with gzip.open(args.idb, "rb") as f:
+        idb = pickle.load(f)
+
+
 
     print(f"Generated {len(peptides):,} unique peptides")
 
