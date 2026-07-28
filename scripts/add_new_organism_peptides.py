@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+Usage:
+python add_to_baccifinder.py --fasta new_organism.faa --taxon-id 123456 --genus-tax-id 9876 --organism-name "My bacterium"  --idb idb.pkl.gz  --bacci-finder bacci_finder.pkl.gz
+"""
 
 import argparse
 import gzip
