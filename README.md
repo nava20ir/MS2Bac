@@ -10,6 +10,11 @@
 ```
 conda activate MS2Bac
 ```
+- for the msfragger search we use the dockerized image in the docker hub
+- first pull the image; this image contains all files needed to run fragpipe
+```
+docker pull nava20ir/fragpipebbm:latest
+```
 
 3. Download reference database. This script must be run only once for implementation or when an update is required. 
   - Please respect all terms and conditions from NCBI when downloading data. For further information, see: https://www.ncbi.nlm.nih.gov/home/about/policies/#scripting
@@ -49,6 +54,7 @@ cd search_space
 python chunk_fasta_file all_fasta.fasta 10  # this will make 10 fasta files
 rm all_fasta.fasta                          # remove the big fasta from the search space
 ```
+
 
 6. Copy the raw file to search_space and run this command once per raw file
 ```
