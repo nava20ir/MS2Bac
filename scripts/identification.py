@@ -75,7 +75,10 @@ def summary_output(summary, bacci_finder):
         df['map'] = df['Organism'].map(bacci_finder)
         df[['Organism name','Genus', '# peptides']] = pd.DataFrame(df['map'].tolist(),index=df.index)
         df['relative'] = df['all peptides'] / df['# peptides']
+        df.to_csv('output_table.csv')
+        #path_test = os.path.join(output_path, 'output_table.csv')
 
+        #print(f'Outputtable printed to {path_test}')
         short = df.groupby('Experiment').apply(lambda g: g.sort_values(by='all peptides', ascending=False).iloc[0])
         return short
     except ValueError:
@@ -95,20 +98,16 @@ if __name__ == "__main__":
     psm_file = sys.argv[1]
     idb_file = sys.argv[2]
     bacci_finder_file = sys.argv[3]
-    print('reading PSM file')
     psms = pd.read_csv(psm_file)
-
-    print('reading bacci_finder filer')
+    print('reading bacci finder')
     with gzip.open(bacci_finder_file, "rb") as f: bacci_finder = pickle.load(f)
-
-    print('reading database picle file')
+    print('reading big file')
     with gzip.open(idb_file, "rb") as f: idb = pickle.load(f)
-
-    print('Runing final calculation')
+    print('going with final step')
+    # Prepare psms file
     d = defaultdict(list)
     psms = psms.groupby(['Experiment', 'Sequence'], as_index=False)['Score'].max()
     for tup in psms.itertuples():  d[tup.Experiment].append((tup.Sequence, tup.Score))
     sample_seqs = pd.Series(dict(d))
     res = summary_output(sample_seqs.apply(count_seqs, database=idb, bacci_finder=bacci_finder), bacci_finder=bacci_finder)
     res.to_csv('summary_output.csv', index=False)
-    print('Done')

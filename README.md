@@ -68,5 +68,11 @@ conda deactivate # you need newer version of python to read the zippped picke fi
 python identification.py <path_to_psm_file from step 7> <path_to_idb_file_from_step 4> <path_to_baccifinder_from_step 4>
 ```
 
+9. visualization
+```
+python visualize_output.py -i <path_to_output_table_from_identification.py> -o <path_to_outputpdf>
+
+```
+
 
    
