@@ -50,21 +50,21 @@ python chunk_fasta_file all_fasta.fasta 10  # this will make 10 fasta files
 rm all_fasta.fasta                          # remove the big fasta from the search space
 ```
 
-6. Copy the raw file to search_space and run
+6. Copy the raw file to search_space and run this command once per raw file
 ```
 ./script.sh <raw_file> 
 
 ```
 in the search space above the fasta files and raw file should be exisiting, in case you added a new organism accordin to step 4 please add the digested_fasta file also here
 
-7. To combine all the fasta files
+7. To combine all the generated PSM  files in to one psm.file
 ```
-python combine_fragger_results.py <path_to_psm_files> <name_of_experiment>
+python combine_fragger_results.py <path_to_psm_files> <name_of_experiment> # this will make the final psm file
 ```
 
 8. Identification
 ```
-conda deactivate # you need newer version of python to read the zippped picke files
+conda deactivate                             # you need newer version of python to read the zippped picke files not the old env
 python identification.py <path_to_psm_file from step 7> <path_to_idb_file_from_step 4> <path_to_baccifinder_from_step 4>
 ```
 
