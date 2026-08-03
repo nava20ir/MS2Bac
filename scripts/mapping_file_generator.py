@@ -133,8 +133,8 @@ def get_accession_assembly_column(df):
             return col
 
 if __name__ == "__main__":
-
-    root = input('Please enter your working directory.\n')
+    import sys
+    root = sys.argv[1]
     path_digest = os.path.join(root, '03_digest')
     path_taxon_annot = os.path.join(root, '00_metafiles', 'download_identification_database.csv')
     idb, bacci_finder = create_iDB(path_digest, path_taxon_annot, 1)
