@@ -45,6 +45,7 @@ import pyteomics
 from pyteomics import fasta
 from pyteomics.parser import cleave, expasy_rules
 from ete3 import NCBITaxa
+from typing import Dict, Tuple
 
 
 def get_accession_assembly_column(df):
@@ -67,108 +68,200 @@ def get_accession_assembly_column(df):
             return col
 
 ######################## functions for metadata pre-processsing ####################################
-  
-def taxon_annotation(assembly, taxon, ncbi):
-    ''' 
-        Function creates annotation dictionaries
 
-        Parameters
-        ----------
-        assembly : string
-            path to the assembly_summary.txt file from NCBI.
-        taxon : string
-            taxon of interest, e.g. 'phylum' or 'genus'
 
-        ncbi: NCBITaxa object from the ete3 package
-            
-        Returns
-        --------
-        taxon_dict: dictionary
-            Mapper for NCBI taxid (key) to NCBI taxon identifier (value)
-        name_dict: dictionary
-            Mapper for NCBI taxid (key) to NCBI taxon name (value)
-    '''
 
-    taxon_dict = dict()
-    name_dict = dict()
+def taxon_annotation(
+    assembly: pd.DataFrame,
+    taxon: str,
+    ncbi: NCBITaxa
+) -> Tuple[Dict[int, int], Dict[int, str]]:
+    """
+    Create mappings from assembly taxids to a specified taxonomic rank.
 
-    for t_id in tqdm.tqdm_notebook(assembly.taxid):
+    Parameters
+    ----------
+    assembly : pd.DataFrame
+        Assembly summary dataframe containing a 'taxid' column.
+
+    taxon : str
+        Taxonomic rank of interest (e.g. 'phylum', 'genus', 'species').
+
+    ncbi : NCBITaxa
+        Initialized ETE3 NCBITaxa object.
+
+    Returns
+    -------
+    taxon_dict : dict
+        Maps assembly taxid -> taxon taxid.
+
+    name_dict : dict
+        Maps assembly taxid -> taxon name.
+    """
+
+    taxon_dict = {}
+    name_dict = {}
+
+
+    for t_id in assembly["taxid"].dropna().unique():
+
+        taxon_dict[t_id] = np.nan
+        name_dict[t_id] = np.nan
+
         try:
             lineage = ncbi.get_lineage(int(t_id))
             rank = ncbi.get_rank(lineage)
 
             for key, value in rank.items():
                 if value == taxon:
-                    name =  ncbi.get_taxid_translator([key])[key]
                     taxon_dict[t_id] = key
-                    name_dict[t_id] = name
+
+                    translator = ncbi.get_taxid_translator([key])
+                    name_dict[t_id] = translator.get(key, np.nan)
+
                     break
-                else:
-                    continue
 
-        except IndexError:
-            print(ncbi.get_lineage(taxon))
-    
-        except ValueError:
-            # For some taxons 
-            taxon_dict[t_id] = np.nan
-            name_dict[t_id] = np.nan 
-
+        except Exception as e:
+            print(f"Failed: {t_id} -> {e}")
 
     return taxon_dict, name_dict
 
 
-def metadata_preprocessing(assembly_path, ani_path):
-    '''
-        Function cleans assembly_summary.txt file and adds annotation. Additionally it merges the ANI from the ANI_report.txt file. 
-
-        Parameters
-        ----------
-        assembly_path : string
-            path to the assembly_summary.txt file from NCBI.
-        proteome_path : string
-            path to the ANI_report_prokaryotes.txt file
 
 
-        Returns
-        --------
-        no return, but saves a new file named xxx to 00_metafiles
-    '''
-    # Load file
-    assembly_summary = pd.read_csv(assembly_path, sep='\t', low_memory=False, skiprows=1,error_bad_lines=False, encoding='latin-1')
 
-    # Clean file
-    assembly_summary['ftp_path'] = assembly_summary['ftp_path'].replace('na', np.nan)
-    assembly_summary = assembly_summary.dropna(subset = ['ftp_path'])
 
-    # Update ncbi taxon database via ncbi FTP server
+def metadata_preprocessing(
+    assembly_path: str,
+    ani_path: str,
+    update_taxonomy: bool = False
+) -> pd.DataFrame:
+    """
+    Clean assembly summary metadata, annotate taxonomy ranks,
+    merge ANI information and save outputs.
+
+    Parameters
+    ----------
+    assembly_path : str
+        Path to NCBI assembly_summary.txt.
+
+    ani_path : str
+        Path to ANI report file.
+
+    update_taxonomy : bool, default=False
+        If True, update ETE taxonomy database.
+
+    Returns
+    -------
+    pd.DataFrame
+        Annotated dataframe merged with ANI data.
+    """
+
+    print("Loading assembly summary...")
+
+    assembly_summary = pd.read_csv(
+        assembly_path,
+        sep="\t",
+        low_memory=False,
+        skiprows=1,
+        encoding="latin-1",
+        error_bad_lines=False
+    )
+
+    assembly_summary["ftp_path"] = (
+        assembly_summary["ftp_path"]
+        .replace("na", np.nan)
+    )
+
+    assembly_summary = (
+        assembly_summary
+        .dropna(subset=["ftp_path"])
+        .copy()
+    )
+
+    print(
+        f"Retained {len(assembly_summary):,} assemblies "
+        "with valid FTP paths."
+    )
+
     ncbi = NCBITaxa()
-    ncbi.update_taxonomy_database()
 
-    # Taxon Annotation
-    taxon_dict = dict()
-    name_dict = dict()
-    for taxon in ['phylum', 'genus', 'species']:
-        taxon_dict, name_dict = taxon_annotation(assembly= assembly_summary, 
-                                             taxon=taxon, ncbi=ncbi)
-        assembly_summary[taxon] = assembly_summary['taxid'].map(taxon_dict)
-        assembly_summary['ncbi_'+str(taxon)+'_name']= assembly_summary['taxid'].map(name_dict)
+    if update_taxonomy:
+        print("Updating NCBI taxonomy database...")
+        ncbi.update_taxonomy_database()
 
-    # Save file
-    output_path = assembly_path.replace('.txt', '_annot.csv')
-    assembly_summary.to_csv(output_path)
+    print("Annotating taxonomy...")
 
-    # Print summary
-    print(assembly_summary[['phylum', 'genus', 'species']].nunique())
+    for rank in ["phylum", "genus", "species"]:
 
-    # Load ANI file
-    ani = pd.read_csv(ani_path,sep='\t')  
+        taxon_dict, name_dict = taxon_annotation(
+            assembly=assembly_summary,
+            taxon=rank,
+            ncbi=ncbi
+        )
 
-    # Map to assembly_summary file via refseq identifier
-    df_all = assembly_summary.merge(ani, left_on=get_accession_assembly_column(assembly_summary), right_on ='refseq-accession', how='left')
+        assembly_summary[rank] = (
+            assembly_summary["taxid"]
+            .map(taxon_dict)
+        )
 
-    output_path = assembly_path.replace('.txt', '_annot_withANI.csv')
-    df_all.to_csv(output_path)
+        assembly_summary[f"ncbi_{rank}_name"] = (
+            assembly_summary["taxid"]
+            .map(name_dict)
+        )
+
+    print("\nUnique taxa identified:")
+    print(
+        assembly_summary[
+            ["phylum", "genus", "species"]
+        ].nunique()
+    )
+
+    annot_output = assembly_path.replace(
+        ".txt",
+        "_annot.csv"
+    )
+
+    assembly_summary.to_csv(
+        annot_output,
+        index=False
+    )
+
+    print(f"Saved: {annot_output}")
+
+    print("Loading ANI metadata...")
+
+    ani = pd.read_csv(
+        ani_path,
+        sep="\t"
+    )
+
+    accession_col = get_accession_assembly_column(
+        assembly_summary
+    )
+    print(f"Using '{accession_col}' as accession column for merging.")
+    print(ani["taxonomy-check-status"].value_counts())
+    merged_df = assembly_summary.merge(
+        ani,
+        left_on=accession_col,
+        right_on="refseq-accession",
+        how="left"
+    )
+    print(merged_df["taxonomy-check-status"].value_counts())
+    merged_output = assembly_path.replace(
+        ".txt",
+        "_annot_withANI.csv"
+    )
+
+    merged_df.to_csv(
+        merged_output,
+        index=False
+    )
+    ani.to_csv('/media/shiny_baybioms/Projects/008_Bioinformatics/B058_Miri/MS2Bac_v1.0.1/00_metafiles/fungi_test_ani.csv', index=False)
+    assembly_summary.to_csv('/media/shiny_baybioms/Projects/008_Bioinformatics/B058_Miri/MS2Bac_v1.0.1/00_metafiles/fungi_test_assembly.csv', index=False)
+    print(f"Saved: {merged_output}")
+
+    return merged_df
 
 ####################### functions for metadata pre-processsing end ###################################
 
@@ -196,10 +289,8 @@ def ncbi_download_reference(
         f"{len(assembly_summary)}"
     )
 
-    assembly_summary = assembly_summary[
-        assembly_summary["taxonomy-check-status"] == "OK"
-    ]
-
+    assembly_summary = assembly_summary[assembly_summary["taxonomy-check-status"] == "OK"]
+    print(f"Number of proteomes after taxonomy check: {len(assembly_summary)}")
     assembly_summary = assembly_summary[
         assembly_summary["refseq_category"].isin(
             ["representative genome", "reference genome"]
@@ -391,104 +482,6 @@ def ncbi_download_reference(
 
     return failed_urls
     
-
-########################## functions for ncbi download #############################################
-
-def ncbi_download_referenceOLD(assembly_summary_path, proteome_path, metadata_output_path):
-    '''
-        Function downloads bacteria proteomes from NCBI.
-        Filtering critera are: taxonomy == ok, assembly_level == 'representative' or 'reference
-
-        Parameters
-        ----------
-        assembly_summary_path : string
-            path to assembly summary file from NCBI.
-        proteome_path : string
-            path to the folder location where proteomes are stored
-        metadata_output_path : string
-            path to the folder location where download metadata should be stored
-
-        Returns
-        --------
-        no return
-    '''
-
-    # load assebmly summary file that includes annotation and ani results from NCBI
-    assembly_summary = pd.read_csv(assembly_summary_path, low_memory=False)
-
-    # filter for taxonomy == 'ok' and assembly_level == 'representative' or 'reference
-    print(f'Number of proteomes in assembly summary before filtering: {len(assembly_summary)}\n')
-
-    assembly_summary = assembly_summary[assembly_summary['taxonomy-check-status'] == 'OK']
-    assembly_summary = assembly_summary[(assembly_summary['refseq_category'] == 'representative genome') | (assembly_summary['refseq_category'] == 'reference genome')]
-
-    print(f'Number of proteomes in assembly summary after filtering: {len(assembly_summary)}\n')
-
-
-    print(f'Number of proteomes in assembly summary after filtering sp.: {len(assembly_summary)}\n')
-
-    print(f'Current ncbi database contains {len(assembly_summary)} complete genomes')
-
-
-    # download from ncbi, download requires a 2 sec sleep in order to continue
-    species_download = {}
-    reference = assembly_summary[['ftp_path', 'species', get_accession_assembly_column(assembly_summary)]]
-
-    for download_path, ncbi_taxon_id, accession in tqdm.tqdm(reference.values, mininterval=10):
-
-        # Check if the species already exists:
-        if ncbi_taxon_id not in species_download:
-            species_download[ncbi_taxon_id] = (accession)
-
-            # Check if file already exists
-            organism_id = download_path.split('/')[-1]
-
-            if (organism_id+'_protein.faa.gz') in os.listdir(proteome_path):
-                continue
-
-            else:
-                # download from NCBI
-                u = (download_path+'/'+organism_id+'_protein.faa.gz')
-                print(u)
-                time.sleep(2)
-
-                try:
-                    attempts = 0
-
-                    while attempts < 3:
-                        print(f'{attempts+1}\n')
-
-                        try:
-                            print(f'Start request {attempts+1}')
-                            with closing(request.urlopen(u, timeout=2)) as r:
-                                print('Open file')
-                                with open((proteome_path+organism_id+'_protein.faa.gz'), 'wb') as f:
-                                    print('move file')
-                                    shutil.copyfileobj(r, f)
-                                    print('Done. Next File!')
-                                    break
-
-                        except (urllib.error.HTTPError, urllib.error.URLError) as error:
-                            attempts += 1
-                            print(type(error))
-
-
-                    print('End download')
-
-                except ValueError:
-                    print('Exception occured! Please try again\n\n')
-                    pass
-
-        else:
-            pass
-
-    # print new metadata_species_only to csv
-    ncbi_species_df = assembly_summary[assembly_summary[get_accession_assembly_column(assembly_summary)].apply(lambda i: i in species_download.values())]
-    print(f'{len(ncbi_species_df)} proteomes in metadata_species file!')
-    ncbi_species_df.to_csv(os.path.join(metadata_output_path, 'download_identification_database.csv'))
-
-
-########################## functions for ncbi download end #############################################
 
 
 
@@ -933,14 +926,15 @@ def ncbi_download_secit(root, goi, root_taxon_specific, p_id, proteome_path, dig
 
 if __name__ == "__main__":
 
-    # Variables
+    import sys
 
-    print('\n\n#### Action required ####') 	
-    root = input('What is your working directory?\nPlease do not use quotation marks.\n')
+	
+    root = sys.argv[1]
+    print(f'Root path: {root} ')
     
 
     assembly_path = root + '/00_metafiles/assembly_summary.txt'
-    ani_path = root + '/00_metafiles/ANI_report_prokaryotes.txt'
+    ani_path = f'{root}/00_metafiles/{sys.argv[2]}'
 
     metadata_output_path = root + '/00_metafiles/'
     proteome_path = root +  '/01_proteomes/'
