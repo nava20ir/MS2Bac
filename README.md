@@ -23,9 +23,11 @@ docker pull nava20ir/fragpipebbm:latest
   - Navigate in Anaconda prompt to your favorite folder\scripts\
   - to check other organisms dynasty https://ftp.ncbi.nlm.nih.gov/genomes/refseq/
 ```
-python download_database_MS2Bac.py
+python download_database_MS2Bac.py <path-to-folder> <path-to-ANI file for that organism>
+python download_database_MS2Bac.py /home/asakhteman/ms2bac/ ANI_report_saccharomycotina.txt # this is for fungus
+python download_database_MS2Bac.py /home/asakhteman/ms2bac/ ANI_report_prokaryotes.txt # this is for Bacteria
 ```
-    Enter your favorite directory when prompted, e.g. C:/Users/MS2Bac_user/Desktop/MS2Bac/. Do not use ' or "
+   
 
 
 4. Making the mapping database for the peptides and organism
