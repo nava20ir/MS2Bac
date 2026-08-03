@@ -32,7 +32,7 @@ python download_database_MS2Bac.py /home/asakhteman/ms2bac/ ANI_report_prokaryot
 
 4. Making the mapping database for the peptides and organism
 ```
-python mapping_file_generator.py  # this will make two picke files "idb.pkl.gz" and  "bacci_finder.pkl.gz"   
+python mapping_file_generator.py <path-to-folder>   # this will make two picke files "idb.pkl.gz" and  "bacci_finder.pkl.gz"   
 
 ```
 - all the above steps are to make the database and mapping files and needs to be done i.e every year
