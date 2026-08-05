@@ -1,4 +1,363 @@
+# MS2Bac
 
+MS2Bac identifies bacterial and fungal species from MS/MS peptide spectra using an MSFragger-based search workflow.
+
+Original implementation by Miriam Abele and Christina Ludwig.
+
+Refactored and extended by Amirhossein Sakhteman (July 2026).
+
+---
+
+# Installation
+
+## 1. Create the Conda Environment
+
+This environment is required for database generation and maintenance.
+
+```bash
+conda env create -f linux_conda.yml
+```
+
+Activate the environment:
+
+```bash
+conda activate MS2Bac
+```
+
+---
+
+## 2. Pull the MSFragger Docker Image
+
+MSFragger is executed via Docker.
+
+```bash
+docker pull nava20ir/fragpipebbm:latest
+```
+
+---
+
+# Directory Structure
+
+```text
+MS2Bac/
+├── Makefile
+├── linux_conda.yml
+├── 00_metafiles/
+├── 01_proteomes/
+├── 02_unzip/
+├── 03_digest/
+├── 04_fasta/
+├── results/
+│
+├── download_database_MS2Bac.py
+├── mapping_file_generator.py
+├── add_new_organism_peptides.py
+├── chunk_fasta_file.py
+├── make_fragger_parameter_file.py
+├── combine_fragger_results.py
+├── identification.py
+└── visualize_output.py
+```
+
+---
+
+# Quick Start
+
+Once the database has been generated, process a RAW file using:
+
+```bash
+make report \
+    RAW=/path/to/sample.raw \
+    EXPERIMENT=sample \
+    IDB=/path/to/idb.pkl.gz \
+    BACCI=/path/to/bacci_finder.pkl.gz
+```
+
+The final report will be generated in:
+
+```text
+results/sample/sample_identification.pdf
+```
+
+---
+
+# Database Generation
+
+This step only needs to be run:
+
+- during initial installation
+- when updating the reference database
+- when rebuilding the database for another organism group
+
+---
+
+## 1. Download Metadata Files
+
+Create:
+
+```text
+00_metafiles/
+```
+
+Download the following files from NCBI.
+
+### Bacteria
+
+```text
+assembly_summary.txt
+ANI_report_prokaryotes.txt
+```
+
+### Fungi (Saccharomycotina)
+
+```text
+assembly_summary.txt
+ANI_report_saccharomycotina.txt
+```
+
+Reference:
+
+https://ftp.ncbi.nlm.nih.gov/genomes/refseq/
+
+Please respect all NCBI download policies.
+
+---
+
+## 2. Download and Build the Reference Database
+
+### Bacteria
+
+```bash
+make database \
+    ANI_FILE=00_metafiles/ANI_report_prokaryotes.txt
+```
+
+### Fungi
+
+```bash
+make database \
+    ANI_FILE=00_metafiles/ANI_report_saccharomycotina.txt
+```
+
+This step:
+
+- downloads representative proteomes
+- unzips FASTA files
+- performs in-silico digestion
+- creates peptide FASTA databases
+
+---
+
+## 3. Generate Mapping Databases
+
+```bash
+make mapping
+```
+
+This generates:
+
+```text
+idb.pkl.gz
+bacci_finder.pkl.gz
+```
+
+These files are required for organism identification.
+
+---
+
+# Adding a New Organism
+
+Additional proteomes can be added to an existing database.
+
+Example:
+
+```bash
+python add_new_organism_peptides.py \
+    --fasta human.fasta \
+    --taxon-id 99999 \
+    --genus-tax-id 9606 \
+    --organism-name "Homo sapiens" \
+    --idb idb.pkl.gz \
+    --bacci-finder bacci_finder.pkl.gz \
+    --output-fasta peptides_human.fasta
+```
+
+This will:
+
+1. Digest the FASTA file.
+2. Update `idb.pkl.gz`.
+3. Update `bacci_finder.pkl.gz`.
+4. Generate an optional peptide FASTA file.
+
+---
+
+# Preparing the Search Space
+
+Create FASTA chunks for MSFragger searching:
+
+```bash
+make prepare-search
+```
+
+or customize the number of chunks:
+
+```bash
+make prepare-search N_CHUNKS=20
+```
+
+This step:
+
+1. Combines FASTA files from `04_fasta/`
+2. Creates `04_fasta/search_space/`
+3. Splits the search space into chunks
+4. Prepares FASTA files for MSFragger
+
+---
+
+# Running an Identification
+
+Run the complete workflow:
+
+```bash
+make report \
+    RAW=/path/to/sample.raw \
+    EXPERIMENT=sample \
+    IDB=idb.pkl.gz \
+    BACCI=bacci_finder.pkl.gz
+```
+
+Pipeline:
+
+```text
+RAW
+ ↓
+MSFragger Search
+ ↓
+combine_fragger_results.py
+ ↓
+psm.csv
+ ↓
+identification.py
+ ↓
+output_table.csv
+ ↓
+visualize_output.py
+ ↓
+PDF Report
+```
+
+---
+
+# Running Individual Pipeline Steps
+
+## Search Only
+
+```bash
+make search \
+    RAW=/path/to/sample.raw \
+    EXPERIMENT=sample
+```
+
+---
+
+## Combine Search Results
+
+```bash
+make combine \
+    RAW=/path/to/sample.raw \
+    EXPERIMENT=sample
+```
+
+---
+
+## Identification Only
+
+```bash
+make identify \
+    RAW=/path/to/sample.raw \
+    EXPERIMENT=sample \
+    IDB=idb.pkl.gz \
+    BACCI=bacci_finder.pkl.gz
+```
+
+---
+
+## Generate PDF Only
+
+```bash
+make visualise EXPERIMENT=sample
+```
+
+---
+
+# Useful Commands
+
+Display all available Make targets:
+
+```bash
+make help
+```
+
+Remove generated FASTA search space:
+
+```bash
+make clean-search
+```
+
+Remove results from one experiment:
+
+```bash
+make clean-results EXPERIMENT=sample
+```
+
+---
+
+# Output Files
+
+For experiment `sample`:
+
+```text
+results/sample/
+├── psm.csv
+├── output_table.csv
+├── summary_output.csv
+└── sample_identification.pdf
+```
+
+---
+
+# Advanced Options
+
+Change the number of FASTA chunks:
+
+```bash
+make report \
+    RAW=/path/to/sample.raw \
+    EXPERIMENT=sample \
+    N_CHUNKS=20 \
+    IDB=idb.pkl.gz \
+    BACCI=bacci_finder.pkl.gz
+```
+
+Adjust Java memory for MSFragger:
+
+```bash
+make report \
+    RAW=/path/to/sample.raw \
+    EXPERIMENT=sample \
+    JAVA_MEM=64G \
+    IDB=idb.pkl.gz \
+    BACCI=bacci_finder.pkl.gz
+```
+
+---
+
+# Notes
+
+- Database generation typically only needs to be performed once.
+- Identification can be run repeatedly using the generated `idb.pkl.gz` and `bacci_finder.pkl.gz`.
+- MSFragger is executed through Docker (`nava20ir/fragpipebbm:latest`).
+- Results from each 
 
 ##### MS2Bac by Miriam Abele, refactored by Amirhossein Sakhteman 27 July 2026 #####
 1. you need to create the environment The environment is only used for the first step of downloading fasta files 
