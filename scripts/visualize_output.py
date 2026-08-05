@@ -27,7 +27,7 @@ def main(output_summary, output_pdf):
     '''
 
     identification = pd.read_csv(output_summary)
-    identification = identification[~identification['Organism name'].str.contains('Homo Sapiens')]
+    #identification = identification[~identification['Organism name'].str.contains('Homo Sapiens')]
     with PdfPages(output_pdf) as pdf:
         visualize_identification(identification.reset_index().sort_values(by='all peptides', ascending=False), pdf)
 
@@ -60,23 +60,23 @@ def visualize_identification(summary, pdf):
         ax2 = fig.add_subplot(gs[1, :])
         ax = [ax0, ax1, ax2]
 
-
+        
         truncated_summary = summary[summary['Experiment'] == e].copy()
-        identified_genus = truncated_summary.iloc[0]['Genus']
+        identified_genus = truncated_summary[~truncated_summary['Organism name'].str.contains('Homo Sapiens')].iloc[0]['Genus']
         truncated_summary['identified_species'] = (truncated_summary['Genus'] == identified_genus)
 
-        sns.stripplot(data=truncated_summary, x='Experiment', y='all peptides', ax=ax[0], hue='identified_species')
+        sns.stripplot(data=truncated_summary[~truncated_summary['Organism name'].str.contains('Homo Sapiens')], x='Experiment', y='all peptides', ax=ax[0], hue='identified_species')
         ax[0].set_title('all peptides')
         ax[0].set_xlabel('')
 
-        sns.stripplot(data=truncated_summary, x='Experiment',
-                  y='unique peptides', ax=ax[1], hue='identified_species')
+        sns.stripplot(data=truncated_summary[~truncated_summary['Organism name'].str.contains('Homo Sapiens')], x='Experiment',y='unique peptides', ax=ax[1], hue='identified_species')
         ax[1].set_title('unique sequences')
         ax[1].set_xlabel('')
-
-        plot_df = truncated_summary.sort_values(by='all peptides', ascending=False)[:5][['score', 'all peptides', 'relative', 'unique peptides', 'Genus', 'Organism name']].copy()
-
-        ccol = plt.cm.BuPu(np.full(len(plot_df.columns), 0.1))
+        #print(truncated_summary)
+        plot_df = truncated_summary.sort_values(by='all peptides', ascending=False)[:10][['score', 'all peptides', 'relative', 'unique peptides', 'Genus', 'Organism name']].copy()
+        filtered_df = plot_df[~plot_df['Organism name'].str.contains('Homo Sapiens')]
+        print(plot_df[plot_df['Organism name'].str.contains('Homo Sapiens')])
+        ccol = plt.cm.BuPu(np.full(len(filtered_df.columns), 0.1))
         table = ax[2].table(cellText=plot_df.values,
                         colLabels=plot_df.columns,
                         loc='center',
