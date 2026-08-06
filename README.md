@@ -437,7 +437,7 @@ conda activate casanovo
 python raw2mzml.py -i [PATH_TO MZML] -o [output]
 cd output 
 casanovo sequence [PATH_TO MZML]
-
+python prepare_from_casanovo.py <path-to-mztab-file> <Experiment_name> # this will make a file named psm.csv for the next step
 ```
 
 
