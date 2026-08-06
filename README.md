@@ -429,6 +429,19 @@ in the search space above the fasta files and raw file should be exisiting, in c
 python combine_fragger_results.py <path_to_psm_files> <name_of_experiment> # this will make the final psm file
 ```
 
+- Using Casanovo;
+- alternatively one can use casanovo to get the PSMs in this case for the step 6 and 7 use the bellow codes
+
+```
+conda activate casanovo
+python raw2mzml.py -i [PATH_TO MZML] -o [output]
+cd output 
+casanovo sequence [PATH_TO MZML]
+
+```
+
+
+
 8. Identification
 ```
 conda deactivate                             # you need newer version of python to read the zippped picke files not the old env
