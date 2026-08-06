@@ -42,5 +42,6 @@ if __name__ == '__main__':
     df = (df.sort_values("score", ascending=False).drop_duplicates(subset="sequence", keep="first").reset_index(drop=True))
     df = df.rename(columns={"score":'Score', "sequence":"Sequence"})
     df = df[['Score','Sequence']]
+    df['Sequence'] = df['Sequence'].str.replace('I|L', 'J', regex=True)
     df['Experiment'] = sys.argv[2]
     df.to_csv('psm.csv',index=False)
