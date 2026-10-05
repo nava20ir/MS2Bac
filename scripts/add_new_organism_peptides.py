@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """
 Usage:
-python add_to_baccifinder.py --fasta new_organism.faa --taxon-id 123456 --genus-tax-id 9876 --organism-name "My bacterium"  --idb idb.pkl.gz  --bacci-finder bacci_finder.pkl.gz
+python add_new_organism_peptides.py --fasta new_organism.faa --rule trypsin --taxon-id 123456 --genus-tax-id 9876 --organism-name "My bacterium"  --idb idb.pkl.gz  --bacci-finder bacci_finder.pkl.gz
 """
 
 import argparse
 import gzip
 import pickle
-
+import re
 from pyteomics import fasta
 import pyteomics
 from pyteomics.parser import cleave, expasy_rules
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple
+
+
+
 
 
 def digest_fasta(
@@ -21,8 +25,10 @@ def digest_fasta(
     min_length=7,
     max_length=30,
 ):
-
-    digest_rule = expasy_rules[rule]
+    if rule == 'D_cut': digest_rule='((?=D)|(?<=D))'
+    else:
+        digest_rule = expasy_rules[rule]
+    
     peptides = set()
 
     with open(fasta_file, "rt") as f:
@@ -34,6 +40,8 @@ def digest_fasta(
                 missed_cleavages,
                 min_length,
             ):
+                if rule == 'D_cut':
+                    peptide = peptide.replace('D', '')
 
                 if (
                     len(peptide) <= max_length
@@ -59,7 +67,8 @@ def add_organism_to_idb(idb, organism_peptides, taxon_id):
 
     for seq in organism_peptides:
         seq = seq.replace("I", "J").replace("L", "J")
-        idb[seq].add(taxon_id)
+        #idb[seq].add(taxon_id)
+        idb.setdefault(seq, set()).add(taxon_id)
 
     return idb
 
@@ -120,6 +129,12 @@ def main():
     )
 
     parser.add_argument(
+        "--rule",
+        default="trypsin",
+        help="Digestion rule (trypsin, chymotrypsin, D_cut, etc.)"
+    )
+
+    parser.add_argument(
         "--bacci-finder",
         required=True,
         help="bacci_finder.pkl.gz"
@@ -137,13 +152,17 @@ def main():
 
     peptides = digest_fasta(
         args.fasta,
+        rule=args.rule,
         output_fasta=args.output_fasta,
     )
 
     print("Loading bacci_finder...")
-
-    with gzip.open(args.bacci_finder, "rb") as f:
-        bacci_finder = pickle.load(f)
+    try:
+        with gzip.open(args.bacci_finder, "rb") as f:
+            bacci_finder = pickle.load(f)
+    except FileNotFoundError:
+        bacci_finder = {}
+        print("bacci_finder file not found. Creating a new one.")
 
     if args.taxon_id in bacci_finder:
         organism_name = bacci_finder[args.taxon_id][0]
@@ -154,9 +173,12 @@ def main():
         )
 
     print("Loading idb...")
-
-    with gzip.open(args.idb, "rb") as f:
-        idb = pickle.load(f)
+    try:
+        with gzip.open(args.idb, "rb") as f:
+            idb = pickle.load(f)
+    except FileNotFoundError:
+        idb = {}
+        print("idb file not found. Creating a new one.")
 
 
 
