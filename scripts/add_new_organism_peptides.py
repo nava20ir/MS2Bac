@@ -41,7 +41,7 @@ def digest_fasta(
                 min_length,
             ):
                 if rule == 'D_cut':
-                    peptide = peptide.replace('D', '')
+                    peptide = peptide.strip('D')
 
                 if (
                     len(peptide) <= max_length
