@@ -18,6 +18,97 @@ def simulate_relative_drops(
     n_sim=10000,
     seed=42
 ):
+    """
+    Test whether ranked peptide counts show larger relative drops than
+    expected under an equal-probability multinomial null model.
+
+    Organisms are ranked by their observed peptide counts in descending
+    order. For each organism, the relative drop from the highest-ranked
+    organism is calculated as:
+
+        relative_drop = (count_rank1 - count) / count_rank1
+
+    A null distribution is generated using Monte Carlo simulation.
+    In each simulation, the total number of observed peptides is randomly
+    distributed among all organisms using a multinomial distribution in
+    which every organism has equal probability of receiving a peptide.
+    The simulated organism counts are then ranked, and the relative drop
+    at each rank is calculated relative to the highest simulated count.
+
+    Empirical p-values are obtained by comparing the observed relative
+    drop at each rank with the corresponding rank-specific null
+    distribution. The highest-ranked organism is used as the reference
+    and therefore does not receive a p-value.
+
+    P-values are corrected for multiple testing using the
+    Benjamini-Hochberg false discovery rate (FDR) procedure.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame containing one row per organism and a column with
+        the observed peptide counts.
+
+    count_col : str, default="all peptides"
+        Name of the column containing peptide counts.
+
+    n_sim : int, default=10000
+        Number of Monte Carlo simulations used to construct the null
+        distributions.
+
+    seed : int, default=42
+        Random seed used to initialise NumPy's random number generator,
+        allowing reproducible simulations.
+
+    Returns
+    -------
+    result : pandas.DataFrame
+        Copy of the original DataFrame, preserving its original row order,
+        with four additional columns:
+
+        - ``relative_drop`` :
+          Relative decrease in peptide count compared with the
+          highest-ranked organism.
+
+        - ``p_value`` :
+          Empirical rank-specific p-value obtained from the simulated
+          null distribution. The highest-ranked organism has NaN.
+
+        - ``FDR`` :
+          Benjamini-Hochberg adjusted p-value. The highest-ranked
+          organism has NaN.
+
+        - ``p_FDR`` :
+          FDR significance expressed as -log10(FDR).
+
+    null_drops : numpy.ndarray
+        Array of shape ``(n_sim, n_organisms)`` containing the simulated
+        relative drops. Columns correspond to organism ranks rather than
+        specific organism identities.
+
+    Notes
+    -----
+    This procedure is a Monte Carlo test based on a multinomial null
+    model; it is not a bootstrap or permutation test.
+
+    The null hypothesis assumes that every peptide has an equal
+    probability of being assigned to each organism. Therefore, the
+    probability for each organism is ``1 / n_organisms``.
+
+    Because organism counts are sorted independently within every
+    simulation, statistical comparisons are rank-specific. For example,
+    the observed second-ranked organism is compared with the distribution
+    of second-ranked organisms generated under the null model, rather
+    than with a null distribution associated with that organism's
+    identity.
+
+    The empirical p-value uses a +1 correction:
+
+        p = (number of simulated drops >= observed drop + 1) /
+            (n_sim + 1)
+
+    which prevents an empirical p-value of exactly zero.
+    """
  
     # Keep original dataframe and original row order
     result = df.copy()
