@@ -221,7 +221,7 @@ def visualize_identification(df, pdf):
                 fontsize=6
             )
     ax[0].set_title('all peptides')
-    ax[0].set_xlabel('')
+    ax[0].set_xlabel('relative difference to the first organism')
 
 
 
