@@ -19,5 +19,5 @@ for psm in psm_*.csv
 # making the visualization
 for report in count_per_*.csv
     do 
-        python visualize2.py -i $report -o $report$suffix
+        python visualize.py -i $report -o $report$suffix
     done
